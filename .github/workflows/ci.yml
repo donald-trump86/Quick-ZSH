@@ -63,8 +63,10 @@ jobs:
           # 2. Verify Oh My Zsh installation
           [[ -d "$HOME/.oh-my-zsh" ]] || { echo "Oh My Zsh directory missing"; exit 1; }
 
-          # 3. Verify Powerlevel10k theme
+          # 3. Verify Powerlevel10k theme & config
           [[ -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]] || { echo "P10k directory missing"; exit 1; }
+          [[ -f "$HOME/.p10k.zsh" ]] || { echo "~/.p10k.zsh missing"; exit 1; }
+          zsh -n "$HOME/.p10k.zsh"
 
           # 4. Verify plugins
           [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]] || { echo "zsh-autosuggestions missing"; exit 1; }
@@ -87,3 +89,4 @@ jobs:
         run: |
           ./install.sh --unattended --with-font
           zsh -n "$HOME/.zshrc"
+          zsh -n "$HOME/.p10k.zsh"

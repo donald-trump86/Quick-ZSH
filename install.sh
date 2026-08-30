@@ -61,6 +61,22 @@ log_error() {
 }
 
 # ------------------------------------------------------------------------------
+# Welcome Banner
+# ------------------------------------------------------------------------------
+print_banner() {
+  printf "\n${CYAN}${BOLD}"
+  cat <<'EOF'
+   ____        _      __          __________  __  __
+  / __ \__  __(_)____/ /__       /__  / ___/ / / / /
+ / / / / / / / / ___/ //_/         / /\__ \ / /_/ / 
+/ /_/ / /_/ / / /__/ ,<           / /___/ // __  /  
+\___\_\__,_/_/\___/_/|_|         /_//____//_/ /_/   
+EOF
+  printf "${RESET}\n"
+  printf "  ${BOLD}Automated Production-Grade Zsh Environment Installer${RESET}\n\n"
+}
+
+# ------------------------------------------------------------------------------
 # CLI Help and Argument Parsing
 # ------------------------------------------------------------------------------
 print_help() {
@@ -489,6 +505,46 @@ EOF
 }
 
 # ------------------------------------------------------------------------------
+# Powerlevel10k Configuration (~/.p10k.zsh) Management
+# ------------------------------------------------------------------------------
+configure_p10k() {
+  log_step "Deploying Powerlevel10k custom configuration ($HOME/.p10k.zsh)..."
+  local target_p10k="$HOME/.p10k.zsh"
+  local script_dir=""
+
+  if [[ -n "${BASH_SOURCE[0]:-}" ]] && [[ -f "${BASH_SOURCE[0]}" ]]; then
+    script_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  fi
+
+  # 1. Backup existing ~/.p10k.zsh if it exists
+  if [[ -f "$target_p10k" ]]; then
+    local timestamp
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    local backup_p10k="${target_p10k}.bak.${timestamp}"
+    cp "$target_p10k" "$backup_p10k"
+    log_info "Existing config backed up to: $backup_p10k"
+  fi
+
+  # 2. Deploy from local repository or download preset
+  if [[ -n "$script_dir" ]] && [[ -f "$script_dir/.p10k.zsh" ]]; then
+    log_info "Applying local .p10k.zsh preset..."
+    cp "$script_dir/.p10k.zsh" "$target_p10k"
+    log_success "Local .p10k.zsh preset deployed successfully."
+  else
+    log_info "Downloading bundled .p10k.zsh preset from repository..."
+    local raw_p10k_url="https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/.p10k.zsh"
+    local p10k_url
+    p10k_url="$(proxy_url "$raw_p10k_url")"
+
+    if curl -fsSL "$p10k_url" -o "$target_p10k" 2>/dev/null; then
+      log_success "Remote .p10k.zsh preset deployed successfully."
+    else
+      log_warn "Could not fetch remote .p10k.zsh preset. You can run 'p10k configure' later."
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Fonts Installation (MesloLGS NF)
 # ------------------------------------------------------------------------------
 query_font_install() {
@@ -627,7 +683,7 @@ print_summary() {
   printf " ${BOLD}Summary of installed components:${RESET}\n"
   printf "  ${GREEN}✔${RESET} Zsh (Shell)\n"
   printf "  ${GREEN}✔${RESET} Oh My Zsh framework\n"
-  printf "  ${GREEN}✔${RESET} Powerlevel10k theme\n"
+  printf "  ${GREEN}✔${RESET} Powerlevel10k theme (Custom preset configured)\n"
   printf "  ${GREEN}✔${RESET} zsh-autosuggestions (history suggestions)\n"
   printf "  ${GREEN}✔${RESET} zsh-syntax-highlighting (syntax highlighting)\n"
   printf "  ${GREEN}✔${RESET} zsh-completions (enhanced completions)\n"
@@ -635,16 +691,36 @@ print_summary() {
     printf "  ${GREEN}✔${RESET} MesloLGS NF Fonts\n"
   fi
   printf "\n"
-  printf " ${BOLD}Next Steps:${RESET}\n"
-  printf "  1. Start using Zsh now by running:\n"
-  printf "     ${CYAN}${BOLD}exec zsh -l${RESET}\n\n"
-  printf "  2. Configure Powerlevel10k theme prompt at any time:\n"
+  printf " ${BOLD}Next Steps & Tips:${RESET}\n"
+  printf "  1. To re-configure Powerlevel10k styles at any time, run:\n"
   printf "     ${CYAN}${BOLD}p10k configure${RESET}\n\n"
   if [[ "$INSTALL_FONT" == "1" ]]; then
-    printf "  3. Set your terminal font to ${BOLD}MesloLGS NF${RESET} to ensure all icons display correctly.\n\n"
+    printf "  2. Set your terminal font to ${BOLD}MesloLGS NF${RESET} to ensure all icons display correctly.\n\n"
   fi
   if [[ -n "$BACKUP_ZSHRC" ]]; then
     printf " ${DIM}Note: Your previous configuration was backed up to: %s${RESET}\n\n" "$BACKUP_ZSHRC"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Automatic Shell Switching
+# ------------------------------------------------------------------------------
+enter_zsh_shell() {
+  if [[ "$UNATTENDED" == "1" ]]; then
+    return 0
+  fi
+
+  local zsh_bin
+  zsh_bin="$(command -v zsh || true)"
+  if [[ -z "$zsh_bin" ]]; then
+    return 0
+  fi
+
+  # Check if running in an interactive terminal
+  if [[ -t 0 ]] || [[ -t 1 ]] || [[ -r /dev/tty ]]; then
+    log_step "Entering new Zsh shell environment..."
+    printf "${GREEN}${BOLD}➜ Loading $HOME/.zshrc and switching into Zsh now...${RESET}\n\n"
+    exec "$zsh_bin" -l
   fi
 }
 
@@ -654,14 +730,7 @@ print_summary() {
 main() {
   parse_args "$@"
 
-  printf "\n"
-  printf "${CYAN}${BOLD}  ____             _          _           ______ ____  _   _${RESET}\n"
-  printf "${CYAN}${BOLD} / __ \ __  __(_) ____| | __        |___  // ___|| | | |${RESET}\n"
-  printf "${CYAN}${BOLD}| |  | | | | | | |/ ___| |/ / _____     / / \___ \| |_| |${RESET}\n"
-  printf "${CYAN}${BOLD}| |__| | |_| | | | |__ |   < |_____|   / /   ___) |  _  |${RESET}\n"
-  printf "${CYAN}${BOLD} \___\_\\__,_|_|_|\____|_|\_\         /_/   |____/|_| |_|${RESET}\n"
-  printf "\n"
-  printf "  %sAutomated Production-Grade Zsh Environment Installer%s\n\n" "$BOLD" "$RESET"
+  print_banner
 
   if [[ "$USE_MIRROR" == "1" ]]; then
     log_info "Mirror acceleration enabled (Proxy: $GH_MIRROR_PREFIX)."
@@ -672,9 +741,11 @@ main() {
   install_oh_my_zsh
   install_themes_and_plugins
   configure_zshrc
+  configure_p10k
   install_fonts
   change_default_shell
   print_summary
+  enter_zsh_shell
 }
 
 main "$@"
