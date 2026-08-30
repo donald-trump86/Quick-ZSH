@@ -70,7 +70,7 @@ Automated production-grade installer for Zsh, Oh My Zsh, Powerlevel10k, and popu
 
 Usage:
   install.sh [options]
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" -- [options]
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" [options]
 
 Options:
   -m, --mirror        Use GitHub proxy/mirror acceleration (for fast download in China)
@@ -90,8 +90,16 @@ EOF
 }
 
 parse_args() {
+  # Handle when invoked via `bash -c "..." --option` where $0 holds the first flag
+  if [[ "$0" == -* ]] && [[ "$0" != "--" ]]; then
+    set -- "$0" "$@"
+  fi
+
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --)
+        shift
+        ;;
       -m|--mirror)
         USE_MIRROR=1
         shift

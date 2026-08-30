@@ -16,10 +16,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run ShellCheck
-        uses: koalaman/shellcheck-action@v0.2.0
-        with:
-          scandir: '.'
-          severity: 'warning'
+        run: |
+          shellcheck --severity=warning install.sh
 
   matrix-test:
     name: Test on ${{ matrix.os }}
