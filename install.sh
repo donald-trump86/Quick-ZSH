@@ -383,24 +383,24 @@ install_themes_and_plugins() {
 # Configuration File (~/.zshrc) Management
 # ------------------------------------------------------------------------------
 configure_zshrc() {
-  log_step "Configuring ~/.zshrc..."
+  log_step "Configuring $HOME/.zshrc..."
   local zshrc="$HOME/.zshrc"
   local zsh_dir="${ZSH:-$HOME/.oh-my-zsh}"
 
-  # 1. Backup existing ~/.zshrc
+  # 1. Backup existing configuration file
   if [[ -f "$zshrc" ]]; then
     local timestamp
     timestamp="$(date +%Y%m%d_%H%M%S)"
     BACKUP_ZSHRC="${zshrc}.bak.${timestamp}"
     cp "$zshrc" "$BACKUP_ZSHRC"
-    log_info "Existing ~/.zshrc backed up to: $BACKUP_ZSHRC"
+    log_info "Existing config backed up to: $BACKUP_ZSHRC"
   else
     if [[ -f "$zsh_dir/templates/zshrc.zsh-template" ]]; then
       cp "$zsh_dir/templates/zshrc.zsh-template" "$zshrc"
-      log_info "Created ~/.zshrc from Oh My Zsh template."
+      log_info "Created $zshrc from Oh My Zsh template."
     else
       touch "$zshrc"
-      log_info "Created a new empty ~/.zshrc."
+      log_info "Created a new empty config at $zshrc."
     fi
   fi
 
@@ -485,7 +485,7 @@ fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 # <<< Quick-ZSH Initialization <<<
 EOF
 
-  log_success "~/.zshrc configuration updated successfully."
+  log_success "$zshrc configuration updated successfully."
 }
 
 # ------------------------------------------------------------------------------
@@ -644,7 +644,7 @@ print_summary() {
     printf "  3. Set your terminal font to ${BOLD}MesloLGS NF${RESET} to ensure all icons display correctly.\n\n"
   fi
   if [[ -n "$BACKUP_ZSHRC" ]]; then
-    printf " ${DIM}Note: Your previous ~/.zshrc was backed up to: %s${RESET}\n\n" "$BACKUP_ZSHRC"
+    printf " ${DIM}Note: Your previous configuration was backed up to: %s${RESET}\n\n" "$BACKUP_ZSHRC"
   fi
 }
 
