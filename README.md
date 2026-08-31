@@ -2,9 +2,9 @@
 
 # ⚡ Quick-ZSH
 
-**生产级 Zsh + Oh My Zsh + Powerlevel10k + 常用高频插件一键自动化配置工具**
+**生产级模块化 Zsh + Oh My Zsh + Powerlevel10k + 高频插件一键自动化配置工具**
 
-*极速、优雅、开箱即用的终端环境一键自动化配置方案。*
+*极速、优雅、可自选模块的开箱即用终端环境一键自动化配置方案。*
 
 [![CI](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml/badge.svg)](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -21,7 +21,8 @@
 
 - [✨ 特性亮点](#-特性亮点)
 - [🚀 极速安装](#-极速安装)
-- [🛠 CLI 参数与环境变量](#-cli-参数与环境变量)
+- [🎛 模块化自选与预设方案](#-模块化自选与预设方案)
+- [🛠 CLI 参数与环境变量速查](#-cli-参数与环境变量速查)
 - [📦 集成组件与插件](#-集成组件与插件)
 - [🐧 支持的操作系统](#-支持的操作系统)
 - [❓ 常见问题 (FAQ)](#-常见问题-faq)
@@ -32,8 +33,9 @@
 ## ✨ 特性亮点
 
 - **⚡ 极速全自动**：单行命令完成全套终端工具链配置，自动处理操作系统包依赖。
-- **🛡 健壮与幂等**：严格开启 `set -euo pipefail`，支持重复多次执行而不产生脏配置。
-- **🔒 安全备份机制**：每次修改 `~/.zshrc` 前，自动创建带精确时间戳的备份文件（如 `~/.zshrc.bak.YYYYMMDD_HHMMSS`）。
+- **🎛 灵活模块化**：支持交互式或参数化自由选择安装主题（Powerlevel10k）与各个插件（自动建议、语法高亮、代码补全等）。
+- **🛡 健壮与幂等**：严格开启 `set -euo pipefail`，支持重复多次执行，自由切换配置而不产生脏配置。
+- **🔒 安全备份机制**：每次修改 `~/.zshrc` 或 `~/.p10k.zsh` 前，自动创建带精确时间戳的备份文件。
 - **🚀 国内自适应加速**：内置 `--mirror` 参数与 GitHub 代理镜像加速，解决国内服务器与 VPS 下载超时痛点。
 - **🔤 字体自动配置**：提供 MesloLGS NF 官方推荐字体全套自动下载及系统字体库刷新。
 - **🌐 多平台全兼容**：原生支持 macOS 以及 Debian/Ubuntu、Arch Linux、Fedora/RHEL、Alpine 等主流 Linux 发行版。
@@ -42,7 +44,7 @@
 
 ## 🚀 极速安装
 
-#### 1. 标准直连安装（海外网络 / 默认）
+#### 1. 标准推荐安装（海外网络 / 默认全功能）
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 ```
@@ -56,9 +58,9 @@ bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donal
 > USE_MIRROR=1 bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 > ```
 
-#### 3. 包含 MesloLGS NF 字体安装
+#### 3. 交互式自定义安装（自由选择各项组件）
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --with-font
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --custom
 ```
 
 #### 4. 无人值守 / CI 自动化安装
@@ -68,18 +70,59 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH
 
 ---
 
-## 🛠 CLI 参数与环境变量
+## 🎛 模块化自选与预设方案
+
+在交互模式下直接运行脚本，你将看到清晰的预设配置菜单：
+
+```text
+Please select an installation profile:
+  [1] Recommended : Powerlevel10k + All 3 Plugins + MesloLGS NF Fonts (Default)
+  [2] Standard    : Powerlevel10k + All 3 Plugins (Skip Fonts)
+  [3] Custom      : Choose theme, plugins, and fonts individually
+```
+
+### 常用组合命令行示例：
+
+```bash
+# 只要插件，不要 Powerlevel10k 主题（使用 OMZ 默认主题）：
+bash -c "$(curl -fsSL https://.../install.sh)" --no-p10k
+
+# 指定只安装 autosuggestions 和 syntax-highlighting 插件：
+bash -c "$(curl -fsSL https://.../install.sh)" --plugins=autosuggestions,syntax-highlighting
+
+# 一键安装全部组件（含字体）：
+bash -c "$(curl -fsSL https://.../install.sh)" --all
+```
+
+---
+
+## 🛠 CLI 参数与环境变量速查
 
 你可以通过命令行参数或环境变量灵活调整安装行为：
 
+### 1. 核心选项
 | CLI 选项 | 环境变量 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `-m`, `--mirror` | `USE_MIRROR=1` | `0` | 开启 GitHub 下载加速镜像（国内 VPS 推荐） |
-| `-f`, `--with-font` | `INSTALL_FONT=1` | `0` | 自动下载并安装 MesloLGS NF 四款字体文件 |
+| `-a`, `--all` | - | - | 一键开启所有功能（P10k + 全部插件 + 字体） |
+| `-c`, `--custom` | - | - | 强制进入逐步交互式自选菜单 |
 | `-u`, `-y`, `--unattended` | `UNATTENDED=1` | `0` | 无人值守模式（不进行任何交互式提问） |
 | `--skip-chsh` | `SKIP_CHSH=1` | `0` | 跳过切换默认 Shell 操作 |
 | `-h`, `--help` | - | - | 显示帮助信息并退出 |
-| - | `GH_MIRROR_PREFIX` | `https://ghfast.top/` | 自定义 GitHub 代理前缀 |
+
+### 2. 主题与插件自选
+| CLI 选项 | 环境变量 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `--with-p10k` / `--no-p10k` | `ENABLE_P10K=1/0` | `1` | 启用 / 禁用 Powerlevel10k 主题及预设配置 |
+| `--with-autosuggestions` / `--no-autosuggestions` | `ENABLE_AUTOSUGGESTIONS=1/0` | `1` | 启用 / 禁用 `zsh-autosuggestions` 插件 |
+| `--with-syntax-highlighting` / `--no-syntax-highlighting` | `ENABLE_SYNTAX_HIGHLIGHTING=1/0` | `1` | 启用 / 禁用 `zsh-syntax-highlighting` 插件 |
+| `--with-completions` / `--no-completions` | `ENABLE_COMPLETIONS=1/0` | `1` | 启用 / 禁用 `zsh-completions` 插件与 `fpath` |
+| `--plugins=<list>` | - | - | 逗号分隔指定插件列表（如 `--plugins=autosuggestions,syntax-highlighting`） |
+
+### 3. 字体选项
+| CLI 选项 | 环境变量 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `-f`, `--with-font` / `--no-font` | `INSTALL_FONT=1/0` | 交互式确认 | 自动下载并安装 MesloLGS NF 四款字体文件 |
 
 ---
 
@@ -89,11 +132,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH
 | :--- | :--- | :--- |
 | **[Zsh](https://www.zsh.org/)** | 核心 Shell | 现代化、功能强大的交互式 Shell 环境 |
 | **[Oh My Zsh](https://ohmyz.sh/)** | 框架 | 驱动插件、主题生态的核心管理框架 |
-| **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** | 主题 | 极速、美观且高度可定制的 Prompt 主题 |
-| **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** | 插件 | 根据历史命令实时给予淡灰色自动输入补全建议（按 `→` 键即可采纳） |
-| **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** | 插件 | 命令语法有效性实时高亮（绿色为正确命令，红色为错误） |
-| **[zsh-completions](https://github.com/zsh-users/zsh-completions)** | 插件 | 额外增加海量常用命令的高级 Tab 自动补全定义 |
-| **[MesloLGS NF](https://github.com/romkatv/powerlevel10k-media)** | 字体 | Powerlevel10k 官方定制 Nerd Font 字体（包含图标集） |
+| **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** | 主题 (可选) | 极速、美观且高度可定制的 Prompt 主题，内置定制 Rainbow 预设 |
+| **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** | 插件 (可选) | 根据历史命令实时给予淡灰色自动输入补全建议（按 `→` 键即可采纳） |
+| **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** | 插件 (可选) | 命令语法有效性实时高亮（绿色为正确命令，红色为错误） |
+| **[zsh-completions](https://github.com/zsh-users/zsh-completions)** | 插件 (可选) | 额外增加海量常用命令的高级 Tab 自动补全定义 |
+| **[MesloLGS NF](https://github.com/romkatv/powerlevel10k-media)** | 字体 (可选) | Powerlevel10k 官方定制 Nerd Font 字体（包含图标集） |
 
 ---
 
@@ -115,7 +158,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH
 ### Q1: 安装完成后终端显示乱码、方块或图标缺失？
 > **原因**：当前终端模拟器使用的字体缺少 Nerd Font 图标字符集。  
 > **解决方案**：
-> 1. 执行脚本时带上 `--with-font` 或在提示时按 `Y` 安装 MesloLGS NF 字体。
+> 1. 执行脚本时选择安装 MesloLGS NF 字体或带上 `--with-font` 参数。
 > 2. 打开你所使用的终端软件设置，将字体（Font）修改为 **MesloLGS NF**：
 >    - **VS Code**: 设置 -> 搜索 `terminal.integrated.fontFamily` -> 设置为 `'MesloLGS NF'`
 >    - **iTerm2**: Preferences -> Profiles -> Text -> Font -> 勾选并在下拉列表中选择 `MesloLGS NF`
@@ -125,11 +168,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH
 ---
 
 ### Q2: 如何重新触发 Powerlevel10k 配置向导？
-> 安装完成后，你随时可以在终端中运行以下命令：
+> 若安装了 Powerlevel10k，你随时可以在终端中运行以下命令：
 > ```bash
 > p10k configure
 > ```
-> 即可重新进入交互式向导，自由切换 Rainbow、Classic 等不同视觉风格。
+> 即可重新进入交互式向导自由切换风格。
 
 ---
 

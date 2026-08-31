@@ -17,6 +17,15 @@ SKIP_CHSH="${SKIP_CHSH:-0}"
 GH_MIRROR_PREFIX="${GH_MIRROR_PREFIX:-https://ghfast.top/}"
 BACKUP_ZSHRC=""
 
+# Modular Feature Toggles (1 = Enable, 0 = Disable)
+ENABLE_P10K="${ENABLE_P10K:-1}"
+ENABLE_AUTOSUGGESTIONS="${ENABLE_AUTOSUGGESTIONS:-1}"
+ENABLE_SYNTAX_HIGHLIGHTING="${ENABLE_SYNTAX_HIGHLIGHTING:-1}"
+ENABLE_COMPLETIONS="${ENABLE_COMPLETIONS:-1}"
+
+EXPLICIT_FLAGS_PASSED=0
+CUSTOM_INTERACTIVE=0
+
 # ------------------------------------------------------------------------------
 # Colors and Styling
 # ------------------------------------------------------------------------------
@@ -82,26 +91,47 @@ EOF
 print_help() {
   cat <<'EOF'
 Quick-ZSH Installer
-Automated production-grade installer for Zsh, Oh My Zsh, Powerlevel10k, and popular plugins.
+Automated production-grade modular installer for Zsh, Oh My Zsh, Powerlevel10k, and popular plugins.
 
 Usage:
   install.sh [options]
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" [options]
 
-Options:
-  -m, --mirror        Use GitHub proxy/mirror acceleration (for fast download in China)
-  -f, --with-font     Automatically download and install MesloLGS NF fonts
-  -u, -y, --yes,
-  --unattended        Run in non-interactive / automated mode
-  --skip-chsh         Skip changing the default login shell to zsh
-  -h, --help          Show this help message and exit
+Core Options:
+  -m, --mirror                Use GitHub proxy/mirror acceleration (for fast download in China)
+  -a, --all                   Install all components (Powerlevel10k + 3 Plugins + Meslo Fonts)
+  -c, --custom                Interactive custom setup (choose individual components)
+  -u, -y, --yes, --unattended Run in non-interactive / automated mode
+  --skip-chsh                 Skip changing the default login shell to zsh
+  -h, --help                  Show this help message and exit
+
+Theme Selection:
+  --with-p10k, --p10k         Enable Powerlevel10k theme (default: enabled)
+  --no-p10k, --skip-p10k      Disable Powerlevel10k theme (uses standard OMZ theme)
+
+Plugin Selection:
+  --plugins=<list>            Specify plugins to enable (comma-separated: autosuggestions,syntax-highlighting,completions,all,none)
+  --with-autosuggestions      Enable zsh-autosuggestions
+  --no-autosuggestions        Disable zsh-autosuggestions
+  --with-syntax-highlighting  Enable zsh-syntax-highlighting
+  --no-syntax-highlighting    Disable zsh-syntax-highlighting
+  --with-completions          Enable zsh-completions
+  --no-completions            Disable zsh-completions
+
+Font Options:
+  -f, --with-font             Automatically download and install MesloLGS NF fonts
+  --no-font, --skip-font      Skip font installation
 
 Environment Variables:
-  USE_MIRROR=1        Enable mirror acceleration
-  INSTALL_FONT=1      Enable MesloLGS NF font installation
-  UNATTENDED=1        Non-interactive execution mode
-  SKIP_CHSH=1         Do not attempt to change default shell
-  GH_MIRROR_PREFIX    Custom proxy prefix (default: https://ghfast.top/)
+  USE_MIRROR=1                Enable mirror acceleration
+  ENABLE_P10K=1|0             Enable / disable Powerlevel10k theme
+  ENABLE_AUTOSUGGESTIONS=1|0  Enable / disable zsh-autosuggestions
+  ENABLE_SYNTAX_HIGHLIGHTING=1|0 Enable / disable zsh-syntax-highlighting
+  ENABLE_COMPLETIONS=1|0      Enable / disable zsh-completions
+  INSTALL_FONT=1|0            Enable / disable MesloLGS NF font installation
+  UNATTENDED=1                Non-interactive execution mode
+  SKIP_CHSH=1                 Do not attempt to change default shell
+  GH_MIRROR_PREFIX            Custom proxy prefix (default: https://ghfast.top/)
 EOF
 }
 
@@ -120,15 +150,112 @@ parse_args() {
         USE_MIRROR=1
         shift
         ;;
+      -a|--all)
+        ENABLE_P10K=1
+        ENABLE_AUTOSUGGESTIONS=1
+        ENABLE_SYNTAX_HIGHLIGHTING=1
+        ENABLE_COMPLETIONS=1
+        INSTALL_FONT=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
       -f|--with-font|--font)
         INSTALL_FONT=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --no-font|--skip-font)
+        INSTALL_FONT=0
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --with-p10k|--p10k)
+        ENABLE_P10K=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --no-p10k|--skip-p10k)
+        ENABLE_P10K=0
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --with-autosuggestions)
+        ENABLE_AUTOSUGGESTIONS=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --no-autosuggestions)
+        ENABLE_AUTOSUGGESTIONS=0
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --with-syntax-highlighting)
+        ENABLE_SYNTAX_HIGHLIGHTING=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --no-syntax-highlighting)
+        ENABLE_SYNTAX_HIGHLIGHTING=0
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --with-completions)
+        ENABLE_COMPLETIONS=1
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --no-completions)
+        ENABLE_COMPLETIONS=0
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      --plugins=*)
+        local plugins_arg="${1#*=}"
+        ENABLE_AUTOSUGGESTIONS=0
+        ENABLE_SYNTAX_HIGHLIGHTING=0
+        ENABLE_COMPLETIONS=0
+        local old_ifs="$IFS"
+        IFS=','
+        read -ra p_arr <<< "$plugins_arg"
+        IFS="$old_ifs"
+        for p in "${p_arr[@]}"; do
+          case "$p" in
+            all)
+              ENABLE_AUTOSUGGESTIONS=1
+              ENABLE_SYNTAX_HIGHLIGHTING=1
+              ENABLE_COMPLETIONS=1
+              ;;
+            none)
+              ENABLE_AUTOSUGGESTIONS=0
+              ENABLE_SYNTAX_HIGHLIGHTING=0
+              ENABLE_COMPLETIONS=0
+              ;;
+            autosuggestions|zsh-autosuggestions)
+              ENABLE_AUTOSUGGESTIONS=1
+              ;;
+            syntax-highlighting|zsh-syntax-highlighting)
+              ENABLE_SYNTAX_HIGHLIGHTING=1
+              ;;
+            completions|zsh-completions)
+              ENABLE_COMPLETIONS=1
+              ;;
+            *)
+              log_warn "Unknown plugin in --plugins list: $p"
+              ;;
+          esac
+        done
+        EXPLICIT_FLAGS_PASSED=1
+        shift
+        ;;
+      -c|--custom)
+        CUSTOM_INTERACTIVE=1
         shift
         ;;
       -u|-y|--yes|--unattended)
         UNATTENDED=1
         shift
         ;;
-      --skip-chsh)
+      --skip-chsh|--no-chsh)
         SKIP_CHSH=1
         shift
         ;;
@@ -142,6 +269,126 @@ parse_args() {
         ;;
     esac
   done
+}
+
+# ------------------------------------------------------------------------------
+# Interactive Setup Menu
+# ------------------------------------------------------------------------------
+interactive_menu() {
+  if [[ "$UNATTENDED" == "1" ]] || [[ "$EXPLICIT_FLAGS_PASSED" == "1" ]]; then
+    return 0
+  fi
+
+  local tty_in=""
+  if [[ -r /dev/tty ]]; then
+    tty_in="/dev/tty"
+  elif [[ -t 0 ]]; then
+    tty_in="/dev/stdin"
+  else
+    return 0
+  fi
+
+  printf "\n"
+  printf "${CYAN}${BOLD}╔═══════════════════════════════════════════════════════════════╗${RESET}\n"
+  printf "${CYAN}${BOLD}║                Quick-ZSH Installation Setup                   ║${RESET}\n"
+  printf "${CYAN}${BOLD}╚═══════════════════════════════════════════════════════════════╝${RESET}\n"
+  printf "\n"
+
+  if [[ "$CUSTOM_INTERACTIVE" != "1" ]]; then
+    printf " ${BOLD}Please select an installation profile:${RESET}\n"
+    printf "  ${GREEN}[1]${RESET} ${BOLD}Recommended${RESET} : Powerlevel10k + All 3 Plugins + MesloLGS NF Fonts (${CYAN}Default${RESET})\n"
+    printf "  ${GREEN}[2]${RESET} ${BOLD}Standard${RESET}    : Powerlevel10k + All 3 Plugins (Skip Fonts)\n"
+    printf "  ${GREEN}[3]${RESET} ${BOLD}Custom${RESET}      : Choose theme, plugins, and fonts individually\n"
+    printf "\n"
+    printf "${CYAN}${BOLD}[?]${RESET} Enter choice [1-3] (Default: 1): "
+
+    local choice=""
+    read -r choice < "$tty_in" || true
+    choice="$(echo "$choice" | tr -d '[:space:]')"
+
+    case "$choice" in
+      2)
+        ENABLE_P10K=1
+        ENABLE_AUTOSUGGESTIONS=1
+        ENABLE_SYNTAX_HIGHLIGHTING=1
+        ENABLE_COMPLETIONS=1
+        INSTALL_FONT=0
+        log_info "Profile selected: Standard (Powerlevel10k + All plugins, skip fonts)."
+        return 0
+        ;;
+      3)
+        CUSTOM_INTERACTIVE=1
+        ;;
+      1|*)
+        ENABLE_P10K=1
+        ENABLE_AUTOSUGGESTIONS=1
+        ENABLE_SYNTAX_HIGHLIGHTING=1
+        ENABLE_COMPLETIONS=1
+        INSTALL_FONT=1
+        log_info "Profile selected: Recommended (Powerlevel10k + All plugins + MesloLGS NF fonts)."
+        return 0
+        ;;
+    esac
+  fi
+
+  # Custom component selection
+  printf "\n${CYAN}${BOLD}--- Custom Component Selection ---${RESET}\n\n"
+
+  # 1. Powerlevel10k prompt
+  printf "${CYAN}${BOLD}[?]${RESET} Install Powerlevel10k theme with pre-configured rainbow preset? [Y/n]: "
+  local resp_p10k=""
+  read -r resp_p10k < "$tty_in" || true
+  case "$resp_p10k" in
+    [nN]|[nN][oO]) ENABLE_P10K=0 ;;
+    *) ENABLE_P10K=1 ;;
+  esac
+
+  # 2. zsh-autosuggestions prompt
+  printf "${CYAN}${BOLD}[?]${RESET} Install zsh-autosuggestions (history suggestions)? [Y/n]: "
+  local resp_auto=""
+  read -r resp_auto < "$tty_in" || true
+  case "$resp_auto" in
+    [nN]|[nN][oO]) ENABLE_AUTOSUGGESTIONS=0 ;;
+    *) ENABLE_AUTOSUGGESTIONS=1 ;;
+  esac
+
+  # 3. zsh-syntax-highlighting prompt
+  printf "${CYAN}${BOLD}[?]${RESET} Install zsh-syntax-highlighting (real-time syntax colors)? [Y/n]: "
+  local resp_syn=""
+  read -r resp_syn < "$tty_in" || true
+  case "$resp_syn" in
+    [nN]|[nN][oO]) ENABLE_SYNTAX_HIGHLIGHTING=0 ;;
+    *) ENABLE_SYNTAX_HIGHLIGHTING=1 ;;
+  esac
+
+  # 4. zsh-completions prompt
+  printf "${CYAN}${BOLD}[?]${RESET} Install zsh-completions (extended tab completion library)? [Y/n]: "
+  local resp_comp=""
+  read -r resp_comp < "$tty_in" || true
+  case "$resp_comp" in
+    [nN]|[nN][oO]) ENABLE_COMPLETIONS=0 ;;
+    *) ENABLE_COMPLETIONS=1 ;;
+  esac
+
+  # 5. MesloLGS NF Fonts prompt
+  local font_default="y/N"
+  [[ "$ENABLE_P10K" == "1" ]] && font_default="Y/n"
+  printf "${CYAN}${BOLD}[?]${RESET} Download & install MesloLGS NF font family? [%s]: " "$font_default"
+  local resp_font=""
+  read -r resp_font < "$tty_in" || true
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    case "$resp_font" in
+      [nN]|[nN][oO]) INSTALL_FONT=0 ;;
+      *) INSTALL_FONT=1 ;;
+    esac
+  else
+    case "$resp_font" in
+      [yY]|[yY][eE][sS]) INSTALL_FONT=1 ;;
+      *) INSTALL_FONT=0 ;;
+    esac
+  fi
+
+  printf "\n"
 }
 
 # ------------------------------------------------------------------------------
@@ -365,34 +612,50 @@ clone_or_update() {
 }
 
 install_themes_and_plugins() {
-  log_step "Installing Powerlevel10k theme and high-frequency plugins..."
+  log_step "Installing selected theme and plugins..."
 
   local zsh_custom="${ZSH_CUSTOM:-${ZSH:-$HOME/.oh-my-zsh}/custom}"
   mkdir -p "$zsh_custom/themes" "$zsh_custom/plugins"
 
   # Powerlevel10k Theme
-  clone_or_update \
-    "https://github.com/romkatv/powerlevel10k.git" \
-    "$zsh_custom/themes/powerlevel10k" \
-    "Powerlevel10k Theme"
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    clone_or_update \
+      "https://github.com/romkatv/powerlevel10k.git" \
+      "$zsh_custom/themes/powerlevel10k" \
+      "Powerlevel10k Theme"
+  else
+    log_info "Powerlevel10k theme installation skipped."
+  fi
 
   # Plugin: zsh-autosuggestions
-  clone_or_update \
-    "https://github.com/zsh-users/zsh-autosuggestions.git" \
-    "$zsh_custom/plugins/zsh-autosuggestions" \
-    "zsh-autosuggestions"
+  if [[ "$ENABLE_AUTOSUGGESTIONS" == "1" ]]; then
+    clone_or_update \
+      "https://github.com/zsh-users/zsh-autosuggestions.git" \
+      "$zsh_custom/plugins/zsh-autosuggestions" \
+      "zsh-autosuggestions"
+  else
+    log_info "zsh-autosuggestions plugin skipped."
+  fi
 
   # Plugin: zsh-syntax-highlighting
-  clone_or_update \
-    "https://github.com/zsh-users/zsh-syntax-highlighting.git" \
-    "$zsh_custom/plugins/zsh-syntax-highlighting" \
-    "zsh-syntax-highlighting"
+  if [[ "$ENABLE_SYNTAX_HIGHLIGHTING" == "1" ]]; then
+    clone_or_update \
+      "https://github.com/zsh-users/zsh-syntax-highlighting.git" \
+      "$zsh_custom/plugins/zsh-syntax-highlighting" \
+      "zsh-syntax-highlighting"
+  else
+    log_info "zsh-syntax-highlighting plugin skipped."
+  fi
 
   # Plugin: zsh-completions
-  clone_or_update \
-    "https://github.com/zsh-users/zsh-completions.git" \
-    "$zsh_custom/plugins/zsh-completions" \
-    "zsh-completions"
+  if [[ "$ENABLE_COMPLETIONS" == "1" ]]; then
+    clone_or_update \
+      "https://github.com/zsh-users/zsh-completions.git" \
+      "$zsh_custom/plugins/zsh-completions" \
+      "zsh-completions"
+  else
+    log_info "zsh-completions plugin skipped."
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -420,22 +683,43 @@ configure_zshrc() {
     fi
   fi
 
-  # 2. Update ZSH_THEME to Powerlevel10k
-  if grep -q '^[[:space:]]*ZSH_THEME=' "$zshrc"; then
-    sed -i.tmp 's|^[[:space:]]*ZSH_THEME=.*$|ZSH_THEME="powerlevel10k/powerlevel10k"|' "$zshrc"
-    rm -f "${zshrc}.tmp"
+  # 2. Update ZSH_THEME based on ENABLE_P10K
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    if grep -q '^[[:space:]]*ZSH_THEME=' "$zshrc"; then
+      sed -i.tmp 's|^[[:space:]]*ZSH_THEME=.*$|ZSH_THEME="powerlevel10k/powerlevel10k"|' "$zshrc"
+      rm -f "${zshrc}.tmp"
+    else
+      printf '\nZSH_THEME="powerlevel10k/powerlevel10k"\n' >> "$zshrc"
+    fi
   else
-    printf '\nZSH_THEME="powerlevel10k/powerlevel10k"\n' >> "$zshrc"
+    # If p10k was explicitly disabled and current theme is p10k, switch to robbyrussell
+    if grep -q '^[[:space:]]*ZSH_THEME="powerlevel10k/powerlevel10k"' "$zshrc"; then
+      sed -i.tmp 's|^[[:space:]]*ZSH_THEME=.*$|ZSH_THEME="robbyrussell"|' "$zshrc"
+      rm -f "${zshrc}.tmp"
+    elif ! grep -q '^[[:space:]]*ZSH_THEME=' "$zshrc"; then
+      printf '\nZSH_THEME="robbyrussell"\n' >> "$zshrc"
+    fi
   fi
 
-  # 3. Update plugins array idempotently using awk
+  # 3. Build plugins list dynamically
+  local plugins_lines="  git"
+  if [[ "$ENABLE_AUTOSUGGESTIONS" == "1" ]]; then
+    plugins_lines="${plugins_lines}\n  zsh-autosuggestions"
+  fi
+  if [[ "$ENABLE_SYNTAX_HIGHLIGHTING" == "1" ]]; then
+    plugins_lines="${plugins_lines}\n  zsh-syntax-highlighting"
+  fi
+  if [[ "$ENABLE_COMPLETIONS" == "1" ]]; then
+    plugins_lines="${plugins_lines}\n  zsh-completions"
+  fi
+
   local tmp_zshrc
   tmp_zshrc="$(mktemp "${TMPDIR:-/tmp}/zshrc.XXXXXX")"
 
-  awk '
+  awk -v plines="$plugins_lines" '
   BEGIN { in_plugins = 0; found_plugins = 0 }
   /^[[:space:]]*plugins=\(/ {
-    print "plugins=(\n  git\n  zsh-autosuggestions\n  zsh-syntax-highlighting\n  zsh-completions\n)"
+    printf "plugins=(\n%s\n)\n", plines
     found_plugins = 1
     if ($0 ~ /\)/) {
       in_plugins = 0
@@ -453,17 +737,18 @@ configure_zshrc() {
   { print }
   END {
     if (!found_plugins) {
-      print "\nplugins=(\n  git\n  zsh-autosuggestions\n  zsh-syntax-highlighting\n  zsh-completions\n)"
+      printf "\nplugins=(\n%s\n)\n", plines
     }
   }
   ' "$zshrc" > "$tmp_zshrc"
 
   mv "$tmp_zshrc" "$zshrc"
 
-  # 4. Inject Powerlevel10k instant prompt at the very beginning if missing
-  if ! grep -q 'p10k-instant-prompt' "$zshrc"; then
-    local p10k_instant_prompt
-    p10k_instant_prompt=$(cat <<'EOF'
+  # 4. Manage Powerlevel10k instant prompt
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    if ! grep -q 'p10k-instant-prompt' "$zshrc"; then
+      local p10k_instant_prompt
+      p10k_instant_prompt=$(cat <<'EOF'
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -473,13 +758,13 @@ fi
 
 EOF
 )
-    local existing_content
-    existing_content="$(cat "$zshrc")"
-    printf "%s\n%s" "$p10k_instant_prompt" "$existing_content" > "$zshrc"
+      local existing_content
+      existing_content="$(cat "$zshrc")"
+      printf "%s\n%s" "$p10k_instant_prompt" "$existing_content" > "$zshrc"
+    fi
   fi
 
   # 5. Manage Quick-ZSH initialization block (fpath + p10k config sourcing)
-  # Remove previous Quick-ZSH block if present to ensure idempotency
   if grep -q '# >>> Quick-ZSH Initialization >>>' "$zshrc"; then
     awk '
     /# >>> Quick-ZSH Initialization >>>/ { skipping = 1; next }
@@ -489,17 +774,17 @@ EOF
     mv "$tmp_zshrc" "$zshrc"
   fi
 
-  # Append clean Quick-ZSH initialization block
-  cat <<'EOF' >> "$zshrc"
+  local quick_block=""
+  if [[ "$ENABLE_COMPLETIONS" == "1" ]]; then
+    quick_block="${quick_block}# Add zsh-completions to fpath\nfpath+=\${ZSH_CUSTOM:-\${ZSH:-\$HOME/.oh-my-zsh}/custom}/plugins/zsh-completions/src\n\n"
+  fi
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    quick_block="${quick_block}# To customize prompt, run \`p10k configure\` or edit ~/.p10k.zsh.\n[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh\n"
+  fi
 
-# >>> Quick-ZSH Initialization >>>
-# Add zsh-completions to fpath
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-# <<< Quick-ZSH Initialization <<<
-EOF
+  if [[ -n "$quick_block" ]]; then
+    printf "\n# >>> Quick-ZSH Initialization >>>\n%b# <<< Quick-ZSH Initialization <<<\n" "$quick_block" >> "$zshrc"
+  fi
 
   log_success "$zshrc configuration updated successfully."
 }
@@ -508,6 +793,10 @@ EOF
 # Powerlevel10k Configuration (~/.p10k.zsh) Management
 # ------------------------------------------------------------------------------
 configure_p10k() {
+  if [[ "$ENABLE_P10K" != "1" ]]; then
+    return 0
+  fi
+
   log_step "Deploying Powerlevel10k custom configuration ($HOME/.p10k.zsh)..."
   local target_p10k="$HOME/.p10k.zsh"
   local script_dir=""
@@ -547,31 +836,9 @@ configure_p10k() {
 # ------------------------------------------------------------------------------
 # Fonts Installation (MesloLGS NF)
 # ------------------------------------------------------------------------------
-query_font_install() {
-  if [[ "$INSTALL_FONT" == "1" ]] || [[ "$UNATTENDED" == "1" ]]; then
-    return 0
-  fi
-
-  # Check if interactive TTY is available
-  if [[ -r /dev/tty ]]; then
-    printf "\n"
-    printf "${CYAN}${BOLD}[?]${RESET} Do you want to download & install recommended ${BOLD}MesloLGS NF${RESET} fonts? [y/N]: "
-    local resp=""
-    read -r resp </dev/tty || true
-    case "$resp" in
-      [yY]|[yY][eE][sS])
-        INSTALL_FONT=1
-        ;;
-      *)
-        INSTALL_FONT=0
-        ;;
-    esac
-  fi
-}
-
 install_fonts() {
   if [[ "$INSTALL_FONT" != "1" ]]; then
-    log_info "Font installation skipped."
+    log_info "MesloLGS NF fonts installation skipped."
     return 0
   fi
 
@@ -683,17 +950,37 @@ print_summary() {
   printf " ${BOLD}Summary of installed components:${RESET}\n"
   printf "  ${GREEN}✔${RESET} Zsh (Shell)\n"
   printf "  ${GREEN}✔${RESET} Oh My Zsh framework\n"
-  printf "  ${GREEN}✔${RESET} Powerlevel10k theme (Custom preset configured)\n"
-  printf "  ${GREEN}✔${RESET} zsh-autosuggestions (history suggestions)\n"
-  printf "  ${GREEN}✔${RESET} zsh-syntax-highlighting (syntax highlighting)\n"
-  printf "  ${GREEN}✔${RESET} zsh-completions (enhanced completions)\n"
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    printf "  ${GREEN}✔${RESET} Powerlevel10k theme (Custom rainbow preset configured)\n"
+  else
+    printf "  ${DIM}○${RESET} Powerlevel10k theme (Skipped, using default theme)\n"
+  fi
+  if [[ "$ENABLE_AUTOSUGGESTIONS" == "1" ]]; then
+    printf "  ${GREEN}✔${RESET} zsh-autosuggestions (history suggestions)\n"
+  else
+    printf "  ${DIM}○${RESET} zsh-autosuggestions (Skipped)\n"
+  fi
+  if [[ "$ENABLE_SYNTAX_HIGHLIGHTING" == "1" ]]; then
+    printf "  ${GREEN}✔${RESET} zsh-syntax-highlighting (syntax highlighting)\n"
+  else
+    printf "  ${DIM}○${RESET} zsh-syntax-highlighting (Skipped)\n"
+  fi
+  if [[ "$ENABLE_COMPLETIONS" == "1" ]]; then
+    printf "  ${GREEN}✔${RESET} zsh-completions (enhanced completions)\n"
+  else
+    printf "  ${DIM}○${RESET} zsh-completions (Skipped)\n"
+  fi
   if [[ "$INSTALL_FONT" == "1" ]]; then
     printf "  ${GREEN}✔${RESET} MesloLGS NF Fonts\n"
+  else
+    printf "  ${DIM}○${RESET} MesloLGS NF Fonts (Skipped)\n"
   fi
   printf "\n"
   printf " ${BOLD}Next Steps & Tips:${RESET}\n"
-  printf "  1. To re-configure Powerlevel10k styles at any time, run:\n"
-  printf "     ${CYAN}${BOLD}p10k configure${RESET}\n\n"
+  if [[ "$ENABLE_P10K" == "1" ]]; then
+    printf "  1. To re-configure Powerlevel10k styles at any time, run:\n"
+    printf "     ${CYAN}${BOLD}p10k configure${RESET}\n\n"
+  fi
   if [[ "$INSTALL_FONT" == "1" ]]; then
     printf "  2. Set your terminal font to ${BOLD}MesloLGS NF${RESET} to ensure all icons display correctly.\n\n"
   fi
@@ -736,7 +1023,7 @@ main() {
     log_info "Mirror acceleration enabled (Proxy: $GH_MIRROR_PREFIX)."
   fi
 
-  query_font_install
+  interactive_menu
   install_dependencies
   install_oh_my_zsh
   install_themes_and_plugins

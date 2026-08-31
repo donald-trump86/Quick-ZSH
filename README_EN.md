@@ -2,9 +2,9 @@
 
 # ⚡ Quick-ZSH
 
-**Production-Ready Automated Zsh + Oh My Zsh + Powerlevel10k + Essential Plugins Installer**
+**Production-Ready Modular Zsh + Oh My Zsh + Powerlevel10k + Essential Plugins Installer**
 
-*Blazing fast, elegant, and out-of-the-box terminal environment setup with a single command.*
+*Blazing fast, elegant, and modular out-of-the-box terminal environment setup.*
 
 [![CI](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml/badge.svg)](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -21,8 +21,9 @@
 
 - [✨ Features](#-features)
 - [🚀 Quick Start](#-quick-start)
+- [🎛 Modular Profiles & Component Selection](#-modular-profiles--component-selection)
 - [🛠 CLI Options & Environment Variables](#-cli-options--environment-variables)
-- [📦 Included Components](#-included-components)
+- [📦 Included Components & Plugins](#-included-components--plugins)
 - [🐧 Supported Operating Systems](#-supported-operating-systems)
 - [❓ FAQ & Troubleshooting](#-faq--troubleshooting)
 - [📄 License](#-license)
@@ -32,8 +33,9 @@
 ## ✨ Features
 
 - **⚡ Fast & Automated**: Complete terminal toolchain setup with automatic package dependency resolution.
-- **🛡 Robust & Idempotent**: Uses `set -euo pipefail`. Re-running multiple times will never pollute or corrupt your environment.
-- **🔒 Safe Backup Mechanism**: Automatically backs up existing `~/.zshrc` with a timestamp before making modifications (`~/.zshrc.bak.YYYYMMDD_HHMMSS`).
+- **🎛 Modular & Customizable**: Interactively or via CLI flags choose whether to install Powerlevel10k and specific plugins.
+- **🛡 Robust & Idempotent**: Uses `set -euo pipefail`. Safely re-run multiple times or switch configurations without generating dirty configs.
+- **🔒 Safe Backup Mechanism**: Automatically backs up existing `~/.zshrc` and `~/.p10k.zsh` with timestamps before making modifications.
 - **🚀 Mirror Acceleration**: Built-in `--mirror` flag to route GitHub traffic through fast reverse proxies in high-latency regions.
 - **🔤 Font Installation**: Automatic MesloLGS NF font installer with font cache refresh.
 - **🌐 Cross-Platform**: Native support for macOS and major Linux distributions (Debian, Ubuntu, Arch Linux, Fedora, Alpine, openSUSE).
@@ -42,7 +44,7 @@
 
 ## 🚀 Quick Start
 
-#### 1. Standard Installation (Global / Default)
+#### 1. Standard Recommended Installation (Global / Default)
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 ```
@@ -56,9 +58,9 @@ bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donal
 > USE_MIRROR=1 bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 > ```
 
-#### 3. Install with MesloLGS NF Fonts
+#### 3. Interactive Custom Setup (Select components step-by-step)
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --with-font
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --custom
 ```
 
 #### 4. Unattended / Automated CI Mode
@@ -68,45 +70,82 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH
 
 ---
 
-## 🛠 CLI Options & Environment Variables
+## 🎛 Modular Profiles & Component Selection
 
-You can customize the installation behavior via CLI flags or environment variables:
+When running interactively, Quick-ZSH presents an easy-to-use profile menu:
 
-| CLI Option | Environment Variable | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `-m`, `--mirror` | `USE_MIRROR=1` | `0` | Enable GitHub proxy/mirror acceleration |
-| `-f`, `--with-font` | `INSTALL_FONT=1` | `0` | Download and install MesloLGS NF font family |
-| `-u`, `-y`, `--unattended` | `UNATTENDED=1` | `0` | Unattended mode (skip all interactive prompts) |
-| `--skip-chsh` | `SKIP_CHSH=1` | `0` | Skip changing default login shell |
-| `-h`, `--help` | - | - | Show help message and exit |
-| - | `GH_MIRROR_PREFIX` | `https://ghfast.top/` | Custom GitHub proxy prefix |
+```text
+Please select an installation profile:
+  [1] Recommended : Powerlevel10k + All 3 Plugins + MesloLGS NF Fonts (Default)
+  [2] Standard    : Powerlevel10k + All 3 Plugins (Skip Fonts)
+  [3] Custom      : Choose theme, plugins, and fonts individually
+```
+
+### CLI Flag Examples:
+
+```bash
+# Skip Powerlevel10k theme (use OMZ default robbyrussell theme):
+bash -c "$(curl -fsSL https://.../install.sh)" --no-p10k
+
+# Install only specific plugins:
+bash -c "$(curl -fsSL https://.../install.sh)" --plugins=autosuggestions,syntax-highlighting
+
+# Install everything including fonts:
+bash -c "$(curl -fsSL https://.../install.sh)" --all
+```
 
 ---
 
-## 📦 Included Components
+## 🛠 CLI Options & Environment Variables
+
+### 1. Core Options
+| CLI Flag | Environment Variable | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `-m`, `--mirror` | `USE_MIRROR=1` | `0` | Enable GitHub proxy/mirror acceleration |
+| `-a`, `--all` | - | - | Enable all features (P10k + 3 plugins + fonts) |
+| `-c`, `--custom` | - | - | Enter step-by-step interactive custom selection |
+| `-u`, `-y`, `--unattended` | `UNATTENDED=1` | `0` | Run in non-interactive mode |
+| `--skip-chsh` | `SKIP_CHSH=1` | `0` | Skip changing default login shell |
+| `-h`, `--help` | - | - | Show help message and exit |
+
+### 2. Theme & Plugins Selection
+| CLI Flag | Environment Variable | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--with-p10k` / `--no-p10k` | `ENABLE_P10K=1/0` | `1` | Enable / disable Powerlevel10k theme |
+| `--with-autosuggestions` / `--no-autosuggestions` | `ENABLE_AUTOSUGGESTIONS=1/0` | `1` | Enable / disable `zsh-autosuggestions` |
+| `--with-syntax-highlighting` / `--no-syntax-highlighting` | `ENABLE_SYNTAX_HIGHLIGHTING=1/0` | `1` | Enable / disable `zsh-syntax-highlighting` |
+| `--with-completions` / `--no-completions` | `ENABLE_COMPLETIONS=1/0` | `1` | Enable / disable `zsh-completions` |
+| `--plugins=<list>` | - | - | Comma-separated list of plugins (e.g. `--plugins=autosuggestions,syntax-highlighting`) |
+
+### 3. Font Options
+| CLI Flag | Environment Variable | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `-f`, `--with-font` / `--no-font` | `INSTALL_FONT=1/0` | Prompt | Download and install MesloLGS NF fonts |
+
+---
+
+## 📦 Included Components & Plugins
 
 | Component | Type | Description |
 | :--- | :--- | :--- |
 | **[Zsh](https://www.zsh.org/)** | Core Shell | Modern, interactive, and powerful shell environment |
 | **[Oh My Zsh](https://ohmyz.sh/)** | Framework | Framework for managing Zsh plugins, themes, and configuration |
-| **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** | Theme | Blazing fast, beautiful, and customizable prompt theme |
-| **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** | Plugin | Fish-like autosuggestions based on command history (press `→` to accept) |
-| **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** | Plugin | Real-time syntax highlighting for shell commands |
-| **[zsh-completions](https://github.com/zsh-users/zsh-completions)** | Plugin | Additional advanced completion definitions for Zsh |
-| **[MesloLGS NF](https://github.com/romkatv/powerlevel10k-media)** | Font | Official Powerlevel10k font with complete Nerd Font glyphs |
+| **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** | Theme (Optional) | Blazing fast prompt theme with customized Rainbow preset |
+| **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** | Plugin (Optional) | Fish-like autosuggestions based on command history |
+| **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** | Plugin (Optional) | Real-time syntax highlighting for shell commands |
+| **[zsh-completions](https://github.com/zsh-users/zsh-completions)** | Plugin (Optional) | Additional advanced completion definitions for Zsh |
+| **[MesloLGS NF](https://github.com/romkatv/powerlevel10k-media)** | Font (Optional) | Official Powerlevel10k font with complete Nerd Font glyphs |
 
 ---
 
 ## 🐧 Supported Operating Systems
 
-| OS / Distribution | Package Manager | Status |
-| :--- | :--- | :--- |
-| **macOS** | Homebrew / Native | ✅ Fully Supported |
-| **Ubuntu / Debian / Kali / Linux Mint** | `apt-get` | ✅ Fully Supported |
-| **Arch Linux / Manjaro / EndeavourOS** | `pacman` | ✅ Fully Supported |
-| **Fedora / RHEL / CentOS / Rocky / AlmaLinux** | `dnf` / `yum` | ✅ Fully Supported |
-| **Alpine Linux** | `apk` | ✅ Fully Supported |
-| **openSUSE / SLES** | `zypper` | ✅ Fully Supported |
+- **macOS** (Apple Silicon & Intel)
+- **Ubuntu / Debian / Kali / Linux Mint** (`apt-get`)
+- **Arch Linux / Manjaro / EndeavourOS** (`pacman`)
+- **Fedora / RHEL / CentOS / Rocky / AlmaLinux** (`dnf`/`yum`)
+- **Alpine Linux** (`apk`)
+- **openSUSE / SLES** (`zypper`)
 
 ---
 
@@ -115,7 +154,7 @@ You can customize the installation behavior via CLI flags or environment variabl
 ### Q1: Icons/glyphs appear as broken boxes or question marks?
 > **Cause**: The current terminal font does not support Nerd Font icon glyphs.  
 > **Solution**:
-> 1. Run the installer with `--with-font` (or answer `y` when prompted).
+> 1. Run the installer with `--with-font` (or select font in the menu).
 > 2. Set your terminal font to **MesloLGS NF**:
 >    - **VS Code**: `Settings` -> Search `terminal.integrated.fontFamily` -> Set to `'MesloLGS NF'`
 >    - **iTerm2**: `Preferences` -> `Profiles` -> `Text` -> `Font` -> Select `MesloLGS NF`
@@ -125,25 +164,17 @@ You can customize the installation behavior via CLI flags or environment variabl
 ---
 
 ### Q2: How do I re-run the Powerlevel10k configuration wizard?
-> You can re-run the prompt configuration wizard at any time:
+> If Powerlevel10k is installed, run:
 > ```bash
 > p10k configure
 > ```
 
 ---
 
-### Q3: Running in restricted non-root / no-sudo environments?
-> If root permissions are unavailable but `zsh`, `git`, and `curl` are already present, the script skips package manager steps and performs user-level setup directly. If base packages are missing, please ask your system administrator to install them.
-
----
-
-### Q4: How to restore my previous `~/.zshrc`?
+### Q3: How to restore my previous `~/.zshrc`?
 > Before making modifications, Quick-ZSH creates a timestamped backup:
 > ```bash
 > ls -la ~/.zshrc.bak.*
-> ```
-> To restore:
-> ```bash
 > cp ~/.zshrc.bak.<TIMESTAMP> ~/.zshrc
 > ```
 
