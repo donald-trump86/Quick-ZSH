@@ -32,9 +32,9 @@ jobs:
           - os: "debian:latest"
             setup: "apt-get update && apt-get install -y curl git sudo ca-certificates"
           - os: "archlinux:latest"
-            setup: "pacman -Sy --noconfirm git curl sudo which ca-certificates"
+            setup: "pacman -Sy --noconfirm git curl sudo which ca-certificates diffutils"
           - os: "fedora:latest"
-            setup: "dnf install -y git curl sudo which ca-certificates"
+            setup: "dnf install -y git curl sudo which ca-certificates diffutils"
           - os: "alpine:latest"
             setup: "apk update && apk add --no-cache bash curl git sudo shadow ca-certificates"
 
@@ -87,6 +87,47 @@ jobs:
       - name: Verify Idempotency (Second Run)
         shell: bash
         run: |
+          # Preserve a custom plugin and a user-edited prompt across an update.
+          sed -i 's/^plugins=(git)$/plugins=(git docker)/' "$HOME/.zshrc"
+          printf '\n# User custom prompt settings\n' >> "$HOME/.p10k.zsh"
+          cp "$HOME/.p10k.zsh" /tmp/quick-zsh-expected-p10k.zsh
           ./install.sh --unattended --with-font
           zsh -n "$HOME/.zshrc"
           zsh -n "$HOME/.p10k.zsh"
+          cmp /tmp/quick-zsh-expected-p10k.zsh "$HOME/.p10k.zsh"
+          # Evaluate the plugin merge without loading external themes or plugins.
+          zsh -fc 'function source() { :; }; builtin source "$HOME/.zshrc"; [[ ${plugins[(Ie)docker]} -gt 0 ]]'
+          [[ $(grep -c '^# >>> Quick-ZSH Components >>>' "$HOME/.zshrc") == 1 ]]
+
+      - name: Verify Download Failures and Backup Restoration
+        shell: bash
+        run: |
+          # Load helpers without running the final main invocation.
+          source <(sed '$d' install.sh)
+          trap cleanup_temporary EXIT
+          attempts=0
+          flaky_download() { attempts=$((attempts + 1)); [[ "$attempts" == 3 ]]; }
+          retry_download https://github.com/example/fixture flaky_download
+          [[ "$attempts" == 3 ]]
+
+          # A failed transfer must not replace a working file with partial data.
+          fetch_file() { printf partial > "$1"; return 1; }
+          printf original > /tmp/quick-zsh-download-test
+          if download_file https://github.com/example/fixture /tmp/quick-zsh-download-test; then exit 1; fi
+          [[ $(cat /tmp/quick-zsh-download-test) == original ]]
+
+          cp "$HOME/.zshrc" /tmp/quick-zsh-restore-expected
+          backup_file "$HOME/.zshrc"
+          chosen_backup="$LAST_BACKUP"
+          printf '\n# Change after backup\n' >> "$HOME/.zshrc"
+          index=0
+          selection=0
+          for backup in "$HOME"/.zshrc.bak.* "$HOME"/.p10k.zsh.bak.*; do
+            [[ -f "$backup" ]] || continue
+            index=$((index + 1))
+            [[ "$backup" != "$chosen_backup" ]] || selection="$index"
+          done
+          [[ "$selection" -gt 0 ]]
+          TTY_INPUT=/dev/stdin
+          printf '%s\ny\n' "$selection" | restore_backup
+          cmp /tmp/quick-zsh-restore-expected "$HOME/.zshrc"

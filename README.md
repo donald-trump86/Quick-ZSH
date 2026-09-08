@@ -1,198 +1,222 @@
-<div align="center">
+# Quick-ZSH
 
-# ⚡ Quick-ZSH
-
-**生产级模块化 Zsh + Oh My Zsh + Powerlevel10k + 高频插件一键自动化配置工具**
-
-*极速、优雅、可自选模块的开箱即用终端环境一键自动化配置方案。*
+一键安装和配置 Zsh、Oh My Zsh，以及可选的 Powerlevel10k 主题、插件和字体。支持 Linux 与 macOS，运行时选择下载源和安装组件。
 
 [![CI](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml/badge.svg)](https://github.com/donald-trump86/Quick-ZSH/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/donald-trump86/Quick-ZSH)
-[![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-green.svg)](https://www.zsh.org/)
 
-[English Documentation](README_EN.md) | **简体中文**
+[English](README_EN.md) | **简体中文**
 
-</div>
+## 目录
 
----
+- [快速开始](#快速开始)
+- [交互式安装](#交互式安装)
+- [下载失败处理](#下载失败处理)
+- [参数与环境变量](#参数与环境变量)
+- [组件](#组件)
+- [支持的系统](#支持的系统)
+- [配置与备份](#配置与备份)
+- [常见问题](#常见问题)
+- [仓库结构与检查](#仓库结构与检查)
+- [许可证](#许可证)
 
-## 📖 目录
+## 快速开始
 
-- [✨ 特性亮点](#-特性亮点)
-- [🚀 极速安装](#-极速安装)
-- [🎛 模块化自选与预设方案](#-模块化自选与预设方案)
-- [🛠 CLI 参数与环境变量速查](#-cli-参数与环境变量速查)
-- [📦 集成组件与插件](#-集成组件与插件)
-- [🐧 支持的操作系统](#-支持的操作系统)
-- [❓ 常见问题 (FAQ)](#-常见问题-faq)
-- [📄 开源协议](#-开源协议)
+在终端执行，无需添加参数：
 
----
-
-## ✨ 特性亮点
-
-- **⚡ 极速全自动**：单行命令完成全套终端工具链配置，自动处理操作系统包依赖。
-- **🎛 灵活模块化**：支持交互式或参数化自由选择安装主题（Powerlevel10k）与各个插件（自动建议、语法高亮、代码补全等）。
-- **🛡 健壮与幂等**：严格开启 `set -euo pipefail`，支持重复多次执行，自由切换配置而不产生脏配置。
-- **🔒 安全备份机制**：每次修改 `~/.zshrc` 或 `~/.p10k.zsh` 前，自动创建带精确时间戳的备份文件。
-- **🚀 国内自适应加速**：内置 `--mirror` 参数与 GitHub 代理镜像加速，解决国内服务器与 VPS 下载超时痛点。
-- **🔤 字体自动配置**：提供 MesloLGS NF 官方推荐字体全套自动下载及系统字体库刷新。
-- **🌐 多平台全兼容**：原生支持 macOS 以及 Debian/Ubuntu、Arch Linux、Fedora/RHEL、Alpine 等主流 Linux 发行版。
-
----
-
-## 🚀 极速安装
-
-#### 1. 标准推荐安装（海外网络 / 默认全功能）
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 ```
 
-#### 2. 国内加速安装（推荐中国大陆服务器 / 终端使用）
-```bash
-bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --mirror
-```
-> 也可通过环境变量直接指定加速：
-> ```bash
-> USE_MIRROR=1 bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
-> ```
+脚本会询问是否使用国内镜像，再让你选择安装方案。检测到配置备份时，会先提供安装或恢复入口。已有本地仓库时，直接运行：
 
-#### 3. 交互式自定义安装（自由选择各项组件）
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --custom
+bash install.sh
 ```
 
-#### 4. 无人值守 / CI 自动化安装
+如果无法访问 `raw.githubusercontent.com`，可以通过镜像获取脚本，同样无需添加参数：
+
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" --unattended
+bash -c "$(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)"
 ```
 
----
+下载脚本后，在提示中输入 `y`，后续 GitHub 下载也会使用镜像。运行中的选择只能影响后续下载，无法改变获取安装脚本时使用的地址。
 
-## 🎛 模块化自选与预设方案
+安装器需要 Bash；使用远程命令需要先安装 `curl`。脚本会检查并安装缺失的 `zsh`、`git`、`curl`。请以需要配置 Zsh 的用户运行，安装系统依赖时会按需调用 `sudo` 或 `doas`。
 
-在交互模式下直接运行脚本，你将看到清晰的预设配置菜单：
+## 交互式安装
+
+首先选择下载源，回车默认直连 GitHub：
 
 ```text
-Please select an installation profile:
-  [1] Recommended : Powerlevel10k + All 3 Plugins + MesloLGS NF Fonts (Default)
-  [2] Standard    : Powerlevel10k + All 3 Plugins (Skip Fonts)
-  [3] Custom      : Choose theme, plugins, and fonts individually
+Use a GitHub mirror for downloads in mainland China? [y/N]:
 ```
 
-### 常用组合命令行示例：
+镜像使用 `GH_MIRROR_PREFIX` 指定的 GitHub 代理前缀，默认是 `https://ghfast.top/`，用于 Oh My Zsh、主题、插件、远程预设和字体的下载。系统包管理器的软件源不会被修改。
+
+随后选择安装方案：
+
+| 选项 | 主题与插件 | 字体 |
+| --- | --- | --- |
+| `1` Recommended（默认） | Powerlevel10k + 全部三个插件 | 安装 |
+| `2` Standard | Powerlevel10k + 全部三个插件 | 跳过 |
+| `3` Custom | 逐项选择 | 逐项选择 |
+
+自定义模式中，主题和插件默认启用；字体默认跟随是否选择 Powerlevel10k。输入无效选项会重新提问，输入中断会终止安装。
+
+已有的参数仍可用于脚本和 CI：
+
+- 显式设置 `USE_MIRROR=0`、`USE_MIRROR=1` 或 `--mirror` 时，不再询问下载源。
+- 指定组件参数时跳过安装方案菜单，但仍可交互选择镜像；`--custom` 可强制进入组件选择。
+- `--unattended` 或没有可用终端时跳过所有安装菜单，也不会自动进入 Zsh。未指定选项时默认直连、启用主题和全部插件、跳过字体。
+- 组件环境变量提供初始值；交互式方案或自定义选择会覆盖这些值。自动化场景请使用 `--unattended`。
+
+## 下载失败处理
+
+文件下载、Oh My Zsh、主题和插件的克隆或更新，会在当前下载源上最多尝试 3 次。仍然失败时，交互模式会询问是否切换直连 / 镜像；回车默认不切换。同意后，新下载源会用于当前资源及后续下载，每个资源最多切源一次。无人值守模式按指定源重试，不会自动切源或等待输入。
+
+文件下载设置 10 秒连接超时和 120 秒单次总超时；Git 在传输速度持续 30 秒低于每秒 1 字节时终止尝试。系统包安装不使用这套重试逻辑。
+
+下载和克隆先写入临时位置，成功后再放到目标路径。失败不会用半成品覆盖现有字体或预设；已有仓库更新失败时保留当前版本，新增必需组件下载失败时终止安装。Git 更新只重试获取远程数据，本地无法快进合并时会保留本地修改并提示。
+
+## 参数与环境变量
+
+在本地仓库中运行以下示例：
 
 ```bash
-# 只要插件，不要 Powerlevel10k 主题（使用 OMZ 默认主题）：
-bash -c "$(curl -fsSL https://.../install.sh)" --no-p10k
+# 无人值守，安装全部组件，跳过修改默认 Shell
+bash install.sh --unattended --all --skip-chsh
 
-# 指定只安装 autosuggestions 和 syntax-highlighting 插件：
-bash -c "$(curl -fsSL https://.../install.sh)" --plugins=autosuggestions,syntax-highlighting
+# 仅安装指定插件，跳过 Powerlevel10k 和字体
+bash install.sh --no-p10k --plugins=autosuggestions,syntax-highlighting --no-font
 
-# 一键安装全部组件（含字体）：
-bash -c "$(curl -fsSL https://.../install.sh)" --all
+# 显式选择镜像，适合自动化环境
+USE_MIRROR=1 bash install.sh --unattended --skip-chsh
+
+# 直接进入组件自选
+bash install.sh --custom
+
+# 直接进入备份恢复，完成后退出
+bash install.sh --restore
+
+# 自动化安装时明确要求替换已有 Powerlevel10k 配置
+bash install.sh --unattended --overwrite-p10k --skip-chsh
 ```
 
----
+远程执行时，使用 `--` 分隔 Bash 的命令字符串和安装器参数：
 
-## 🛠 CLI 参数与环境变量速查
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/donald-trump86/Quick-ZSH/main/install.sh)" -- --unattended --skip-chsh
+```
 
-你可以通过命令行参数或环境变量灵活调整安装行为：
+| 参数 | 环境变量 | 默认行为 / 说明 |
+| --- | --- | --- |
+| `-m`, `--mirror` | `USE_MIRROR=0/1` | 交互询问；无终端时默认直连 |
+| `-a`, `--all` | — | 启用主题、全部插件和字体 |
+| `-c`, `--custom` | — | 逐项选择组件 |
+| `-u`, `-y`, `--yes`, `--unattended` | `UNATTENDED=1` | 跳过安装菜单和自动进入 Zsh |
+| `--skip-chsh` | `SKIP_CHSH=1` | 跳过修改默认登录 Shell |
+| `--restore` | — | 交互式选择并恢复配置备份，不执行安装 |
+| `--overwrite-p10k` / `--keep-p10k` | `OVERWRITE_P10K=1/0` | 替换 / 保留已有预设；交互默认保留，无人值守自动保留 |
+| `--with-p10k` / `--no-p10k` | `ENABLE_P10K=1/0` | 默认启用 Powerlevel10k 及预设 |
+| `--with-autosuggestions` / `--no-autosuggestions` | `ENABLE_AUTOSUGGESTIONS=1/0` | 默认启用历史建议 |
+| `--with-syntax-highlighting` / `--no-syntax-highlighting` | `ENABLE_SYNTAX_HIGHLIGHTING=1/0` | 默认启用语法高亮 |
+| `--with-completions` / `--no-completions` | `ENABLE_COMPLETIONS=1/0` | 默认启用扩展补全 |
+| `--plugins=<list>` | — | 逗号分隔：`autosuggestions,syntax-highlighting,completions`，也支持 `all` / `none` |
+| `-f`, `--with-font` / `--no-font` | `INSTALL_FONT=1/0` | 默认 `0`；交互推荐方案会启用 |
+| — | `GH_MIRROR_PREFIX` | 代理前缀，默认 `https://ghfast.top/` |
+| — | `NO_COLOR=1` | 关闭安装器的彩色输出 |
+| `-h`, `--help` | — | 查看完整选项及别名 |
 
-### 1. 核心选项
-| CLI 选项 | 环境变量 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `-m`, `--mirror` | `USE_MIRROR=1` | `0` | 开启 GitHub 下载加速镜像（国内 VPS 推荐） |
-| `-a`, `--all` | - | - | 一键开启所有功能（P10k + 全部插件 + 字体） |
-| `-c`, `--custom` | - | - | 强制进入逐步交互式自选菜单 |
-| `-u`, `-y`, `--unattended` | `UNATTENDED=1` | `0` | 无人值守模式（不进行任何交互式提问） |
-| `--skip-chsh` | `SKIP_CHSH=1` | `0` | 跳过切换默认 Shell 操作 |
-| `-h`, `--help` | - | - | 显示帮助信息并退出 |
+`--unattended` 不会自动设置 `--skip-chsh`，系统权限工具仍可能要求密码；CI 中建议同时指定两者。
 
-### 2. 主题与插件自选
-| CLI 选项 | 环境变量 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `--with-p10k` / `--no-p10k` | `ENABLE_P10K=1/0` | `1` | 启用 / 禁用 Powerlevel10k 主题及预设配置 |
-| `--with-autosuggestions` / `--no-autosuggestions` | `ENABLE_AUTOSUGGESTIONS=1/0` | `1` | 启用 / 禁用 `zsh-autosuggestions` 插件 |
-| `--with-syntax-highlighting` / `--no-syntax-highlighting` | `ENABLE_SYNTAX_HIGHLIGHTING=1/0` | `1` | 启用 / 禁用 `zsh-syntax-highlighting` 插件 |
-| `--with-completions` / `--no-completions` | `ENABLE_COMPLETIONS=1/0` | `1` | 启用 / 禁用 `zsh-completions` 插件与 `fpath` |
-| `--plugins=<list>` | - | - | 逗号分隔指定插件列表（如 `--plugins=autosuggestions,syntax-highlighting`） |
+## 组件
 
-### 3. 字体选项
-| CLI 选项 | 环境变量 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `-f`, `--with-font` / `--no-font` | `INSTALL_FONT=1/0` | 交互式确认 | 自动下载并安装 MesloLGS NF 四款字体文件 |
+| 组件 | 用途 |
+| --- | --- |
+| [Zsh](https://www.zsh.org/) | 交互式 Shell，必装 |
+| [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh) | 主题与插件框架，必装 |
+| [Powerlevel10k](https://github.com/romkatv/powerlevel10k) | 可选主题，附带 Rainbow 预设 |
+| [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) | 根据历史命令提供输入建议 |
+| [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) | 命令语法高亮 |
+| [zsh-completions](https://github.com/zsh-users/zsh-completions) | 扩展 Tab 补全定义 |
+| [MesloLGS NF](https://github.com/romkatv/powerlevel10k-media) | 终端字体，包含 Nerd Font 字形 |
 
----
+## 支持的系统
 
-## 📦 集成组件与插件
+| 系统 | 依赖安装工具 |
+| --- | --- |
+| macOS | Homebrew；已具备依赖时无需 Homebrew |
+| Ubuntu / Debian / Kali / Linux Mint | `apt-get` |
+| Arch Linux / Manjaro / EndeavourOS | `pacman` |
+| Fedora / RHEL / CentOS / Rocky / AlmaLinux | `dnf` / `yum` |
+| Alpine Linux | `apk`，运行安装器前需安装 Bash |
+| openSUSE / SLES | `zypper` |
 
-| 组件 | 类型 | 说明 |
-| :--- | :--- | :--- |
-| **[Zsh](https://www.zsh.org/)** | 核心 Shell | 现代化、功能强大的交互式 Shell 环境 |
-| **[Oh My Zsh](https://ohmyz.sh/)** | 框架 | 驱动插件、主题生态的核心管理框架 |
-| **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** | 主题 (可选) | 极速、美观且高度可定制的 Prompt 主题，内置定制 Rainbow 预设 |
-| **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** | 插件 (可选) | 根据历史命令实时给予淡灰色自动输入补全建议（按 `→` 键即可采纳） |
-| **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** | 插件 (可选) | 命令语法有效性实时高亮（绿色为正确命令，红色为错误） |
-| **[zsh-completions](https://github.com/zsh-users/zsh-completions)** | 插件 (可选) | 额外增加海量常用命令的高级 Tab 自动补全定义 |
-| **[MesloLGS NF](https://github.com/romkatv/powerlevel10k-media)** | 字体 (可选) | Powerlevel10k 官方定制 Nerd Font 字体（包含图标集） |
+CI 在 Ubuntu、Debian、Arch Linux、Fedora 和 Alpine 容器中检查安装与重复运行。macOS 和 openSUSE 的安装分支未包含在当前 CI 矩阵中。
 
----
+## 配置与备份
 
-## 🐧 支持的操作系统
+脚本会更新已有仓库，并在修改现有 `~/.zshrc`、替换 `~/.p10k.zsh` 前创建 `.bak.YYYYMMDD_HHMMSS.XXXXXX` 备份。随机后缀避免同一秒内多次操作覆盖备份，也支持恢复旧版不带后缀的备份。
 
-| 操作系统 / 发行版 | 包管理器 | 支持状态 |
-| :--- | :--- | :--- |
-| **macOS** | Homebrew / 原生 | ✅ 完美支持 |
-| **Ubuntu / Debian / Kali / Linux Mint** | `apt-get` | ✅ 完美支持 |
-| **Arch Linux / Manjaro / EndeavourOS** | `pacman` | ✅ 完美支持 |
-| **Fedora / RHEL / CentOS / Rocky / AlmaLinux** | `dnf` / `yum` | ✅ 完美支持 |
-| **Alpine Linux** | `apk` | ✅ 完美支持 |
-| **openSUSE / SLES** | `zypper` | ✅ 完美支持 |
+原有的插件声明、注释、别名和其他用户配置会保留。脚本在 Oh My Zsh 初始化前插入自己的组件区块，将内置 `git` 和本次选中的插件合并到原列表并去重。例如，已有 `plugins=(git docker kubectl)` 时，`docker` 和 `kubectl` 会保留；禁用自动建议时，仅从最终加载列表中移除 `zsh-autosuggestions`。`--plugins=none` 只禁用本项目提供的三个可选插件，不清空用户自定义插件。禁用组件不会删除已下载目录。
 
----
+启用 Powerlevel10k 会设置对应主题。已有 `~/.p10k.zsh` 时，会询问是否替换，回车默认保留；无人值守时自动保留。只有明确同意、使用 `--overwrite-p10k` 或设置 `OVERWRITE_P10K=1` 才会备份并替换。新安装没有此文件时，使用仓库预设。
 
-## ❓ 常见问题 (FAQ)
+运行 `bash install.sh`，在检测到备份后的操作菜单中选择 `Restore a configuration backup`，或直接执行：
 
-### Q1: 安装完成后终端显示乱码、方块或图标缺失？
-> **原因**：当前终端模拟器使用的字体缺少 Nerd Font 图标字符集。  
-> **解决方案**：
-> 1. 执行脚本时选择安装 MesloLGS NF 字体或带上 `--with-font` 参数。
-> 2. 打开你所使用的终端软件设置，将字体（Font）修改为 **MesloLGS NF**：
->    - **VS Code**: 设置 -> 搜索 `terminal.integrated.fontFamily` -> 设置为 `'MesloLGS NF'`
->    - **iTerm2**: Preferences -> Profiles -> Text -> Font -> 勾选并在下拉列表中选择 `MesloLGS NF`
->    - **Windows Terminal**: 设置 -> 默认值 -> 外观 -> 字体 -> 选择 `MesloLGS NF`
->    - **Alacritty / Kitty / WezTerm**: 在对应配置文件中将 `font` 设置为 `MesloLGS NF`
+```bash
+bash install.sh --restore
+```
 
----
+选择列表中的 `.zshrc` 或 `.p10k.zsh` 备份，确认后恢复对应文件；回车或选择 `0` 可取消。恢复前会再备份当前文件，因此也能撤回这次恢复。恢复操作一次处理一个文件，不安装组件、不下载资源、不修改默认 Shell；需要可用终端，不能与 `--unattended` 一起使用。恢复后请打开新的 Shell。
 
-### Q2: 如何重新触发 Powerlevel10k 配置向导？
-> 若安装了 Powerlevel10k，你随时可以在终端中运行以下命令：
-> ```bash
-> p10k configure
-> ```
-> 即可重新进入交互式向导自由切换风格。
+也可以手动查看和恢复：
 
----
+```bash
+ls -la ~/.zshrc.bak.* ~/.p10k.zsh.bak.*
+# 将下面的文件名替换为实际备份文件名
+cp ~/.zshrc.bak.YYYYMMDD_HHMMSS.XXXXXX ~/.zshrc
+```
 
-### Q3: 运行在无 Sudo / 非 Root 的受限服务器环境？
-> 如果所在机器没有 root 权限且已预装了 `zsh`, `git`, `curl`，脚本将跳过系统包安装步骤，直接完成当前用户的全套配置。若缺失基础依赖，请联系系统管理员安装对应软件包。
+## 常见问题
 
----
+**字体显示为方块或缺少图标？**
 
-### Q4: 修改了配置想找回以前的 `~/.zshrc`？
-> 每次执行修改前，脚本都会自动创建安全备份。你可以在家目录下查找历史备份：
-> ```bash
-> ls -la ~/.zshrc.bak.*
-> ```
-> 使用以下命令即可还原：
-> ```bash
-> cp ~/.zshrc.bak.<时间戳> ~/.zshrc
-> ```
+安装 MesloLGS NF 后，还需要在终端软件中将字体设为 `MesloLGS NF`。通过 SSH 使用远程服务器时，字体需要安装在运行终端的本地电脑上。
 
----
+**如何调整 Powerlevel10k 样式？**
 
-## 📄 开源协议
+进入 Zsh 后运行 `p10k configure`，或编辑 `~/.p10k.zsh`。
 
-本项目基于 [MIT License](LICENSE) 协议开源。
+**没有管理员权限可以使用吗？**
+
+如果 `zsh`、`git`、`curl` 均已安装，可以加上 `--skip-chsh` 配置当前用户环境。缺失系统依赖时，需要管理员先安装依赖。
+
+**安装后没有切换到 Zsh？**
+
+无人值守和无终端模式不会自动切换。可在终端运行 `zsh`；如需设置默认登录 Shell，运行 `chsh -s "$(command -v zsh)"` 后重新登录。
+
+## 仓库结构与检查
+
+```text
+install.sh                安装入口、交互选择、下载与配置逻辑
+.p10k.zsh                 Powerlevel10k 预设
+README.md / README_EN.md  中英文使用说明
+.github/workflows/ci.yml  ShellCheck 与 Linux 容器安装检查
+.editorconfig             编辑器格式约定
+LICENSE                   MIT 许可证
+```
+
+本地静态检查：
+
+```bash
+bash -n install.sh
+zsh -n .p10k.zsh
+shellcheck --severity=warning install.sh
+```
+
+## 许可证
+
+[MIT](LICENSE)。
